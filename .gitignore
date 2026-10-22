@@ -1,0 +1,47 @@
+# Dependencies and package-manager output
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+android/signing/
+*.jks
+*.keystore
+*.idsig
+
+# Generated Android/build artifacts
+.gradle/
+**/.gradle/
+android/build/
+android/classes/
+android/dex/
+android/gen/
+local.properties
+
+# Packaged release binaries
+*.apk
+*.aab
+release/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor metadata (keep shared project settings)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
