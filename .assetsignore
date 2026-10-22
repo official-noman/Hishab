@@ -1,0 +1,11 @@
+# Exclude build-time dependencies; Cloudflare installs these during deployment.
+node_modules/
+**/node_modules/
+
+# These are not needed by the hosted PWA and include a duplicate web build.
+android/
+release/
+
+# Repository and local Wrangler metadata.
+.git/
+.wrangler/
