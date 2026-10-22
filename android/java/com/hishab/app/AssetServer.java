@@ -38,7 +38,10 @@ final class AssetServer {
     int start() throws IOException {
         server = new ServerSocket();
         server.setReuseAddress(true);
-        server.bind(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0), 32);
+        // This port must stay fixed. Browser storage (localStorage/IndexedDB)
+        // is scoped to the origin, so a random port would make all transactions
+        // disappear the next time the app is opened.
+        server.bind(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 8765), 32);
         running = true;
         Thread thread = new Thread(this::acceptLoop, "HishabAssetServer");
         thread.setDaemon(true);

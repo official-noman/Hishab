@@ -88,14 +88,6 @@ public class MainActivity extends Activity {
                     intent.addCategory(Intent.CATEGORY_OPENABLE);
                     intent.setType("*/*");
                     intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-                    intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] {
-                            "application/pdf",
-                            "image/*",
-                            "text/*",
-                            "text/csv",
-                            "application/vnd.ms-excel",
-                            "application/octet-stream"
-                    });
 
                     try {
                         startActivityForResult(
