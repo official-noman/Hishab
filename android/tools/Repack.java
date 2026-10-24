@@ -1,5 +1,7 @@
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -15,8 +17,8 @@ import java.util.zip.ZipOutputStream;
  */
 public final class Repack {
     public static void main(String[] args) throws Exception {
-        if (args.length != 2) {
-            System.err.println("usage: Repack <input.apk> <output.apk>");
+        if (args.length < 2 || args.length > 3) {
+            System.err.println("usage: Repack <input.apk> <output.apk> [classes.dex]");
             System.exit(2);
         }
 
@@ -50,6 +52,16 @@ public final class Repack {
                 }
 
                 output.putNextEntry(copy);
+                output.write(data);
+                output.closeEntry();
+            }
+
+            if (args.length == 3) {
+                byte[] data = Files.readAllBytes(Paths.get(args[2]));
+                ZipEntry extra = new ZipEntry("classes.dex");
+                extra.setMethod(ZipEntry.DEFLATED);
+                extra.setTime(System.currentTimeMillis());
+                output.putNextEntry(extra);
                 output.write(data);
                 output.closeEntry();
             }

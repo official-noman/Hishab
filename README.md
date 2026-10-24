@@ -8,6 +8,23 @@ A private expense tracker for you and your family. It reads **bank and bKash sta
 - Up to 3 (or more) family members.
 - PDF text, scanned PDFs, screenshots and photos are read on the device.
 - Voice entry in English or Bangla, with a preview before saving.
+- **Ask Hishab** — an on-device assistant for spending, merchants, dates, bills, POS and saved contacts.
+- ATM and bKash **Cash Out** move money to Cash instead of counting as an expense.
+
+### What's new in 1.3.4
+
+- **Ask Hishab assistant** (top-right chat icon or More → Ask Hishab). Ask questions such as
+  “How much did I spend on shopping last month?”, “How much at Rizq restaurant?”,
+  “List POS transactions”, “Show bill payments this year” or “Show my last 10 transactions”.
+- Answers include the total, matching transaction details and dates. All 111+ demo or real
+  transactions can be searched by category, merchant, note, account, member, date, phone number
+  or a saved contact name.
+- **Saved contacts**: save a name and phone number once, then ask by name or number. The same
+  number updates the saved name. Contacts are included in backups and undo.
+- **Help & examples** panel explains how to ask, with one-tap example questions.
+- The assistant is rule-based and runs entirely on the phone; no API key, account or server.
+- Cash-out handling from 1.3.3 is unchanged: the amount moves from Bank/bKash to Cash and is not
+  an expense, while fees and charges remain normal expenses.
 
 ---
 
@@ -80,7 +97,14 @@ This is only for testing. Chrome will not offer "Install" on a plain `http://` a
 
 ## 2. How to get an APK file
 
-An APK is an Android installer file. Hishab is a PWA, so the easiest way to make an APK is **PWABuilder**. It wraps your hosted app in a small Android app (a Trusted Web Activity).
+> **Prebuilt APK:** the release folder already contains
+> **`Hishab-APK/Hishab-1.3.4.apk`**. It is a standalone, signed Android 5.0+
+> app that bundles the whole website inside the APK, works fully offline and
+> needs no hosting. The assistant, contacts and cash-out handling are included.
+> `Hishab-APK/Hishab-Share.zip` is the same APK in a ZIP for sharing.
+> The PWABuilder steps below are only for making your own hosted wrapper.
+
+An APK is an Android installer file. Hishab is a PWA, so another way to make an APK is **PWABuilder**. It wraps your hosted app in a small Android app (a Trusted Web Activity).
 
 ### Step 1 — Host the app first
 
@@ -138,7 +162,7 @@ On Netlify Drop, create the folder on your computer, put the file inside, and dr
 - After the first load, it works offline because the app is cached.
 - When you update the website, the APK gets the new version automatically.
 - A PWABuilder APK is for Android. iPhone users should use **Add to Home Screen** in Safari.
-- If you want a **fully standalone APK with no hosting at all**, you need a different wrapper such as Capacitor. That requires Android Studio and is more advanced; this project does not include an Android Studio build.
+- A **fully standalone APK with no hosting at all** is already available at `Hishab-APK/Hishab-1.3.4.apk`. It uses the custom WebView wrapper in `android/`, bundles the whole app, and does not need Capacitor or Android Studio.
 
 ### Alternative: Bubblewrap (command line)
 

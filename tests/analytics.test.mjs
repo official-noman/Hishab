@@ -87,6 +87,35 @@ test('account balances include openings and ignore transfer double counting', ()
   }
 });
 
+test('ATM withdrawal moves Bank to Cash without changing net balance', () => {
+  const s = demoState();
+  s.accounts.bank.opening = 10000;
+  s.accounts.bkash.opening = 500;
+  s.accounts.cash.opening = 1000;
+  s.txns = [{
+    id: 't_atm',
+    memberId: s.members[0].id,
+    date: '2026-10-20',
+    type: 'transfer',
+    amount: 2000,
+    category: 'transfer',
+    account: 'bank',
+    toAccount: 'cash',
+    note: 'ATM withdrawal',
+    ref: 'ATM-1',
+    source: 'bank',
+    createdAt: '2026-10-20T10:00:00.000Z',
+  }];
+  const summary = accountSummary(s);
+  assert.equal(summary.accounts.bank.balance, 8000);
+  assert.equal(summary.accounts.cash.balance, 3000);
+  assert.equal(summary.accounts.bkash.balance, 500);
+  assert.equal(summary.total, 11500);
+  assert.equal(totals(s.txns).expense, 0);
+  assert.equal(totals(s.txns).transfer, 2000);
+  assert.equal(totals(s.txns).net, 0);
+});
+
 test('report builder applies filters, weeks, insights and budget', () => {
   const report = buildReport(state, { ...span, memberId: state.members[0].id });
   assert.equal(report.txns.length, filterTxns(state, { ...span, memberId: state.members[0].id }).length);

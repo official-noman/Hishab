@@ -33,6 +33,22 @@ export function moreView(ctx) {
     </section>
 
     <section class="set-section">
+      <div class="set-title">${t('assistant.title')}</div>
+      <div class="set-card">
+        <div class="set-row">
+          <div class="set-left">
+            <span class="set-ic">${icon('sparkles', 15)}</span>
+            <div>
+              <div class="set-label">${t('assistant.open')}</div>
+              <div class="set-sub">${esc(t('assistant.moreSub', { n: (state.contacts || []).length }))}</div>
+            </div>
+          </div>
+          <a class="btn small soft" href="#/assistant">${icon('chat', 14)}${t('assistant.openBtn')}</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="set-section">
       <div class="set-title">${t('more.members')}</div>
       <div class="set-card">
         ${state.members.map((m) => memberRow(m, state, lang)).join('')}

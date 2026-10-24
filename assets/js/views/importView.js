@@ -178,6 +178,12 @@ function previewRow(row, lang) {
   const cat = getCategory(row.category);
   const sign = row.type === 'income' ? '+' : row.type === 'expense' ? '-' : '';
   const amountClass = row.type === 'income' ? 'pos' : row.type === 'transfer' ? 'faint' : '';
+  const accountLabel = row.type === 'transfer' && row.toAccount
+    ? t('txn.transferFromTo', {
+      from: accountName(row.account, lang),
+      to: accountName(row.toAccount, lang),
+    })
+    : accountName(row.account, lang);
   return `<div class="pv-row ${row.duplicate ? 'dup' : ''}">
     <input class="pv-check" type="checkbox" data-change="import-include" data-index="${row.index}" ${row.include ? 'checked' : ''} aria-label="${t('import.include')}">
     <div class="pv-main">
@@ -187,7 +193,7 @@ function previewRow(row, lang) {
         <span>•</span>
         <span>${cat.emoji} ${esc(categoryName(row.category, lang))}</span>
         <span>•</span>
-        <span>${esc(accountName(row.account, lang))}</span>
+        <span>${esc(accountLabel)}</span>
         ${row.duplicate ? `<span class="tag">${esc(t('import.dupe'))}</span>` : ''}
       </div>
     </div>

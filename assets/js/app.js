@@ -4,9 +4,10 @@
 
 import {
   ACCOUNT_IDS, EXPENSE_CATEGORIES, INCOME_CATEGORIES, MEMBER_COLORS, MEMBER_EMOJIS,
-  accountName, categoryName, getCategory, matchCategory,
+  accountName, categoryName, getCategory, matchCategory, suggestedTransferTarget,
 } from './categories.js';
 import { buildReport } from './analytics.js';
+import { answerQuestion } from './assistant.js';
 import { avatar, brandMark, icon } from './components.js';
 import {
   MAX_FILE_BYTES, MAX_FILES, extractFile, fileKind, formatBytes, stopOcr,
@@ -16,9 +17,9 @@ import {
   SAMPLE_BANK_CSV, SAMPLE_BKASH_CSV, parseStatement,
 } from './parsers.js';
 import {
-  addMember, addTxn, buildBackup, clearUndo, deleteMember, deleteTxn, demoState,
+  addContact, addMember, addTxn, buildBackup, clearUndo, deleteContact, deleteMember, deleteTxn, demoState,
   fingerprint, loadState, loadUi, loadUndo, makeTxn, markDuplicateRows, mergeStates,
-  parseBackup, resetStateKeepPrefs, saveState, saveUi, saveUndo, undoInfo, updateMember, updateTxn,
+  normalizePhone, parseBackup, resetStateKeepPrefs, saveState, saveUi, saveUndo, undoInfo, updateMember, updateTxn,
 } from './store.js';
 import {
   PRESETS, addDaysISO, copyText, csvCell, downloadJSON, downloadText, esc,
@@ -29,12 +30,13 @@ import {
   createSpeechRecognizer, parseVoiceCommand, speechSupported,
 } from './voice.js';
 import { activityView } from './views/activity.js';
+import { assistantView } from './views/assistant.js';
 import { homeView } from './views/home.js';
 import { importView } from './views/importView.js';
 import { moreView } from './views/more.js';
 import { reportView } from './views/report.js';
 
-const ROUTES = ['home', 'activity', 'import', 'report', 'more'];
+const ROUTES = ['home', 'activity', 'import', 'report', 'more', 'assistant'];
 const NAV = [
   { id: 'home', icon: 'home' },
   { id: 'activity', icon: 'activity' },
@@ -59,6 +61,7 @@ let importSeq = 0;
 let voiceRec = null;
 let voiceTimer = 0;
 let voiceLang = 'en-US';
+let assistantChat = [];
 
 /* =========================================================
    boot
@@ -148,6 +151,7 @@ function buildCtx() {
     })),
     install: { canInstall: Boolean(deferredPrompt), installed, ios: isIOS() },
     undo: undoInfo(),
+    assistant: { messages: assistantChat },
   };
 }
 
@@ -164,6 +168,7 @@ function performUndo() {
   state = undo.state;
   saveState(state);
   clearUndo();
+  assistantChat = [];
   if (undo.ui) {
     ui = {
       ...ui,
@@ -193,6 +198,7 @@ function render(opts = {}) {
   else if (route === 'activity') body = activityView(ctx);
   else if (route === 'import') body = importView(ctx);
   else if (route === 'report') body = reportView(ctx);
+  else if (route === 'assistant') body = assistantView(ctx);
   else body = moreView(ctx);
 
   const scrollY = window.scrollY;
@@ -205,7 +211,7 @@ function render(opts = {}) {
     </main>
   </div>
   ${bottomNav()}
-  ${route === 'import' ? '' : fab()}`;
+  ${route === 'import' || route === 'assistant' ? '' : fab()}`;
 
   renderSheet();
   updateTopbarScroll();
@@ -234,6 +240,9 @@ function topbar(ctx) {
       <span class="brand-txt">${t('app.name')}<small>HISHAB</small></span>
     </a>
     <div class="top-actions">
+      <a class="icon-btn ${route === 'assistant' ? 'active' : ''}" href="#/assistant" aria-label="${esc(t('assistant.open'))}" title="${esc(t('assistant.open'))}" ${route === 'assistant' ? 'aria-current="page"' : ''}>
+        ${icon('chat', 17)}
+      </a>
       <button class="icon-btn" type="button" data-action="toggle-theme" aria-label="${esc(t('more.theme'))}">
         ${icon(state.settings.theme === 'dark' ? 'sun' : 'moon', 17)}
       </button>
@@ -248,7 +257,7 @@ function topbar(ctx) {
 
 function bottomNav() {
   return `<nav class="bottom-nav" aria-label="${esc(t('app.name'))}">
-    ${NAV.map((item) => `<a class="nav-item ${route === item.id ? 'active' : ''}" href="#/${item.id}" ${route === item.id ? 'aria-current="page"' : ''}>
+    ${NAV.map((item) => `<a class="nav-item ${route === item.id || (route === 'assistant' && item.id === 'more') ? 'active' : ''}" href="#/${item.id}" ${route === item.id || (route === 'assistant' && item.id === 'more') ? 'aria-current="page"' : ''}>
       <span class="nav-ic">${icon(item.icon, 19)}</span>
       <span>${t(`nav.${item.id}`)}</span>
     </a>`).join('')}
@@ -434,6 +443,10 @@ function txnSheet() {
       </div>` : ''}
     </div>
 
+    ${acct !== 'cash' && !(type === 'transfer' && toAcct === 'cash')
+      ? `<button class="btn small soft block" type="button" data-action="txn-cash-out" style="margin-top:8px">${icon('cash', 14)}${t('txn.cashOutShortcut')}</button>`
+      : ''}
+
     <div class="field">
       <label for="txn-note">${t('txn.note')} <span class="faint">(${t('txn.noteOptional')})</span></label>
       <input class="input" id="txn-note" name="note" type="text" maxlength="240" placeholder="${esc(t('txn.notePh'))}" value="${esc(d.note || '')}">
@@ -476,7 +489,7 @@ function saveTxnForm() {
   const account = ACCOUNT_IDS.includes(d.account) ? d.account : 'cash';
   const toAccount = ACCOUNT_IDS.includes(d.toAccount) && d.toAccount !== account
     ? d.toAccount
-    : ACCOUNT_IDS.find((a) => a !== account) || 'cash';
+    : suggestedTransferTarget(account, d.note);
 
   if (type === 'transfer' && toAccount === account) {
     sheet.error = t('txn.errTransfer');
@@ -1323,6 +1336,26 @@ function handleAction(action, el) {
     case 'open-add':
       openTxnSheet(null);
       return;
+    case 'assistant-example':
+      askAssistant(el.dataset.q || '');
+      return;
+    case 'assistant-clear':
+      assistantChat = [];
+      render({ animate: false, keepScroll: true });
+      return;
+    case 'assistant-contact-delete': {
+      const contact = (state.contacts || []).find((item) => item.id === el.dataset.id);
+      if (!contact) return;
+      openConfirm({
+        title: t('assistant.contactDelete'),
+        desc: t('assistant.contactDeleteDesc', { name: contact.name }),
+        confirmLabel: t('common.delete'),
+        action: 'delete-contact',
+        payload: contact.id,
+        tone: 'danger',
+      });
+      return;
+    }
     case 'open-voice':
       openVoiceSheet();
       return;
@@ -1350,7 +1383,7 @@ function handleAction(action, el) {
       if (type === 'transfer') {
         sheet.draft.category = 'transfer';
         if (!sheet.draft.toAccount || sheet.draft.toAccount === sheet.draft.account) {
-          sheet.draft.toAccount = ACCOUNT_IDS.find((id) => id !== sheet.draft.account) || 'bank';
+          sheet.draft.toAccount = suggestedTransferTarget(sheet.draft.account, sheet.draft.note);
         }
       } else {
         const pool = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
@@ -1358,6 +1391,18 @@ function handleAction(action, el) {
           sheet.draft.category = type === 'income' ? 'salary' : 'food';
         }
       }
+      sheet.error = '';
+      renderSheet();
+      return;
+    }
+    case 'txn-cash-out': {
+      syncTxnDraft();
+      const account = ACCOUNT_IDS.includes(sheet.draft.account) ? sheet.draft.account : 'bank';
+      if (account === 'cash') return;
+      sheet.draft.type = 'transfer';
+      sheet.draft.account = account;
+      sheet.draft.toAccount = 'cash';
+      sheet.draft.category = 'transfer';
       sheet.error = '';
       renderSheet();
       return;
@@ -1560,7 +1605,62 @@ function onSubmit(event) {
   } else if (form.id === 'accounts-form') {
     event.preventDefault();
     saveAccountsForm();
+  } else if (form.id === 'assistant-form') {
+    event.preventDefault();
+    askAssistant(document.getElementById('assistant-input')?.value || '');
+  } else if (form.id === 'assistant-contact-form') {
+    event.preventDefault();
+    saveAssistantContactForm();
   }
+}
+
+function askAssistant(raw) {
+  const text = String(raw || '').replace(/\s+/g, ' ').trim();
+  if (!text) return;
+  const answer = answerQuestion(text, state, { lang: state.settings.lang });
+  assistantChat.push({ role: 'user', text });
+  assistantChat.push({ role: 'assistant', answer, at: Date.now() });
+  if (assistantChat.length > 40) assistantChat = assistantChat.slice(-40);
+  if (route !== 'assistant') {
+    location.hash = '#/assistant';
+    return;
+  }
+  render({ animate: false });
+  requestAnimationFrame(() => {
+    const thread = document.getElementById('assistant-thread');
+    if (!thread) return;
+    const messages = [...thread.querySelectorAll('.assistant-msg')];
+    const lastUser = messages.reverse().find((el) => el.classList.contains('user'));
+    if (lastUser) {
+      const offset = lastUser.getBoundingClientRect().top - thread.getBoundingClientRect().top;
+      thread.scrollTop += offset - 4;
+    } else {
+      thread.scrollTop = thread.scrollHeight;
+    }
+  });
+}
+
+function saveAssistantContactForm() {
+  const name = document.getElementById('assistant-contact-name')?.value || '';
+  const phone = document.getElementById('assistant-contact-phone')?.value || '';
+  if (!String(name).trim()) {
+    toast(t('assistant.contactErrName'), 'warn');
+    return;
+  }
+  if (normalizePhone(phone).length < 6) {
+    toast(t('assistant.contactErrPhone'), 'warn');
+    return;
+  }
+  snapshot(t('undo.labelContactAdd'));
+  const result = addContact(state, { name, phone });
+  if (!result.ok) {
+    clearUndo();
+    toast(t(result.code === 'limit' ? 'assistant.contactLimit' : 'assistant.contactErrPhone'), 'error');
+    return;
+  }
+  saveState(state);
+  toast(t(result.updated ? 'assistant.contactUpdated' : 'assistant.contactSaved', { name: result.contact.name }), 'success');
+  render({ animate: false, keepScroll: true });
 }
 
 function onChange(event) {
@@ -1574,6 +1674,17 @@ function onChange(event) {
   }
   if (el.id === 'import-member') {
     ui.import = { ...(ui.import || {}), memberId: el.value };
+    return;
+  }
+  if (el.id === 'txn-account') {
+    if (sheet?.type === 'txn') {
+      syncTxnDraft();
+      if (sheet.draft.type === 'transfer'
+        && (!sheet.draft.toAccount || sheet.draft.toAccount === sheet.draft.account)) {
+        sheet.draft.toAccount = suggestedTransferTarget(sheet.draft.account, sheet.draft.note);
+      }
+      renderSheet();
+    }
     return;
   }
   if (el.dataset.change === 'import-include') {
@@ -1590,7 +1701,7 @@ function onChange(event) {
       if (type === 'transfer') {
         row.category = 'transfer';
         if (!row.toAccount || row.toAccount === row.account) {
-          row.toAccount = ACCOUNT_IDS.find((id) => id !== row.account) || 'bank';
+          row.toAccount = suggestedTransferTarget(row.account, row.description);
         }
       } else {
         row.category = matchCategory(row.description, type);
@@ -1971,6 +2082,7 @@ function pickRestoreFile() {
       const merged = mergeStates(state, incoming);
       snapshot(t('undo.labelRestore'));
       state = merged.state;
+      assistantChat = [];
       saveState(state);
       closeSheet();
       render({ animate: false });
@@ -2020,9 +2132,24 @@ function runConfirmed() {
     render({ animate: false });
     return;
   }
+  if (action === 'delete-contact') {
+    const contact = (state.contacts || []).find((item) => item.id === payload);
+    if (!contact) {
+      closeSheet();
+      return;
+    }
+    snapshot(t('undo.labelContactDelete'));
+    deleteContact(state, payload);
+    saveState(state);
+    closeSheet();
+    toast(t('assistant.contactDeleted'), 'success');
+    render({ animate: false });
+    return;
+  }
   if (action === 'load-demo') {
     snapshot(t('undo.labelDemo'));
     state = demoState();
+    assistantChat = [];
     saveState(state);
     resetUiForData();
     closeSheet();
@@ -2034,6 +2161,7 @@ function runConfirmed() {
   if (action === 'clear-data') {
     snapshot(t('undo.labelClear'));
     state = resetStateKeepPrefs(state);
+    assistantChat = [];
     saveState(state);
     resetUiForData();
     closeSheet();

@@ -9,7 +9,8 @@ globalThis.localStorage = {
 };
 
 const {
-  addTxn, clearUndo, defaultState, loadUndo, makeTxn, markDuplicateRows, saveUndo, undoInfo,
+  addContact, addTxn, buildBackup, clearUndo, defaultState, deleteContact, loadUndo, makeTxn,
+  markDuplicateRows, mergeStates, parseBackup, saveUndo, undoInfo,
 } = await import('../assets/js/store.js');
 
 let passed = 0;
@@ -83,6 +84,45 @@ test('an exact repeat inside one import is still a duplicate', () => {
   const marked = markDuplicateRows([], [row, { ...row }]);
   assert.equal(marked[0].duplicate, false);
   assert.equal(marked[1].duplicate, true);
+});
+
+test('contacts normalize phone numbers, upsert by number and delete', () => {
+  const state = defaultState();
+  const created = addContact(state, { name: 'Jemmy bhai', phone: '+880 1712-345678' });
+  assert.equal(created.ok, true);
+  assert.equal(created.updated, false);
+  assert.equal(created.contact.phone, '8801712345678');
+  assert.equal(state.contacts.length, 1);
+
+  const updated = addContact(state, { name: 'Jemmy', phone: '8801712345678' });
+  assert.equal(updated.ok, true);
+  assert.equal(updated.updated, true);
+  assert.equal(state.contacts.length, 1);
+  assert.equal(state.contacts[0].name, 'Jemmy');
+
+  const removed = deleteContact(state, state.contacts[0].id);
+  assert.equal(removed.name, 'Jemmy');
+  assert.equal(state.contacts.length, 0);
+});
+
+test('contacts survive backup round-trip and merge once by phone', () => {
+  const current = defaultState();
+  addContact(current, { name: 'Jemmy bhai', phone: '918272727' });
+
+  const exported = defaultState();
+  addContact(exported, { name: 'Jemmy bhai', phone: '918272727' });
+  addContact(exported, { name: 'Rizq restaurant', phone: '01711111111' });
+  const restored = parseBackup(JSON.stringify(buildBackup(exported)));
+  assert.equal(restored.contacts.length, 2);
+  assert.equal(restored.contacts[1].phone, '01711111111');
+
+  const merged = mergeStates(current, restored);
+  assert.equal(merged.state.contacts.length, 2);
+  assert.equal(merged.contactsAdded, 1);
+  assert.deepEqual(
+    merged.state.contacts.map((contact) => contact.phone).sort(),
+    ['01711111111', '918272727'],
+  );
 });
 
 test('clearing removes the snapshot', () => {

@@ -27,6 +27,8 @@ local.properties
 *.apk
 *.aab
 release/
+# Keep the current standalone APK in the repository for direct download.
+!Hishab-APK/Hishab-*.apk
 
 # Logs and temporary files
 *.log

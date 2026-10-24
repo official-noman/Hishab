@@ -125,7 +125,7 @@ export const MEMBER_EMOJIS = ['🙂', '👨', '👩', '👦', '👧', '🧑', '�
 
 const TRANSFER_PATTERNS = [
   /\batm\b/i,
-  /cash\s*(withdraw|withdrawal|withdrawn|wd|out|deposit|in)\b/i,
+  /cash\s*(withdraw|withdrawal|withdrawn|wd|wdl|out|deposit|in)\b/i,
   // Screenshot OCR often confuses "out" with "ost", "ow" or "owt".
   /cash\s*o(?:ut|st|w|wt)\b/i,
   /\badd\s*money\b/i,
@@ -138,7 +138,31 @@ const TRANSFER_PATTERNS = [
 
 export function isTransferDescription(text) {
   const s = String(text || '');
+  // "Cash Out charge", "ATM fee" etc. are expenses, not transfers.
+  if (/\b(?:fee|fees|charge|charges|commission)\b/i.test(s)) return false;
   return TRANSFER_PATTERNS.some((rx) => rx.test(s));
+}
+
+/**
+ * True when a bank/bKash row is cash leaving the account for physical cash:
+ * ATM withdrawal, cash withdrawal, or bKash Cash Out.
+ * Fees are deliberately excluded so "Cash Out charge" stays an expense.
+ */
+export function isCashOutDescription(text) {
+  const s = String(text || '');
+  if (/\b(?:fee|fees|charge|charges|commission)\b/i.test(s)) return false;
+  if (/cash\s*(?:out|w(?:d|dl|ithdraw(?:al|n)?))\b/i.test(s)) return true;
+  // "ATM" alone means an ATM withdrawal; "ATM deposit" is the opposite.
+  return /\batm\b/i.test(s) && !/\b(?:deposit|cash\s*in)\b/i.test(s);
+}
+
+/**
+ * Sensible default destination for a transfer entered by hand or changed in
+ * the import preview. Cash withdrawals always land in the Cash account.
+ */
+export function suggestedTransferTarget(account, description = '') {
+  if (isCashOutDescription(description)) return 'cash';
+  return account === 'cash' ? 'bank' : 'cash';
 }
 
 function keywordHit(text, keyword) {

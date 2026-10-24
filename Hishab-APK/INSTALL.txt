@@ -1,0 +1,144 @@
+HISHAB - ANDROID APK INSTALL GUIDE
+==================================
+
+File: Hishab-1.3.4.apk
+Package: com.hishab.app
+Version: 1.3.4 (version code 4)
+Minimum Android: 5.0 (Android Lollipop)
+Works offline: Yes. The whole app is bundled inside the APK.
+Internet needed: No, after installation.
+
+What is new in 1.3.4
+--------------------
+- NEW: Ask Hishab, an on-device assistant. Open it from the chat icon in the
+  top bar or from More -> Ask Hishab.
+- Ask about spending, income, transfers, balances, merchants, notes, categories,
+  accounts, members, dates, POS transactions, bill payments and saved contacts.
+  Examples:
+    How much did I spend on shopping last month?
+    How much at Rizq restaurant?
+    How much did I give Jemmy bhai (918272727)?
+    List POS transactions
+    Show bill payments this year
+    Show my last 10 transactions
+- Answers include the total, transaction details, accounts, members and dates.
+- NEW: Saved contacts. Save a name and phone number once, then ask by name or
+  number. The same number updates the saved name. Contacts are included in
+  backups, restore, merge and undo.
+- NEW: Help & examples panel with a short guide and one-tap examples.
+- The assistant is local and rule-based. No account, API key, cloud service or
+  external AI request is used. Your data stays on the phone.
+- Cash-out handling from 1.3.3 is included. ATM withdrawals and bank/bKash
+  "Cash Out" move money from Bank or bKash to Cash. They are not expenses, so
+  the total balance is unchanged. Cash-out fees and charges remain expenses.
+
+HOW TO INSTALL ON A PHONE
+-------------------------
+1. Copy Hishab-1.3.4.apk to the phone (USB, Google Drive, Telegram, etc.).
+   If an app blocks .apk files, send Hishab-Share.zip and unzip it first.
+2. Open the phone's Files app and tap Hishab-1.3.4.apk.
+3. Android may say: "For your security, your phone is not allowed to install
+   unknown apps from this source."
+   Tap Settings -> Allow from this source -> go back.
+4. Tap Install.
+5. Tap Open. The Hishab icon is now in the app list.
+
+If Hishab 1.3.3 or another older Hishab is already installed, install 1.3.4
+over it. Do not uninstall the old app first: an update keeps your saved data.
+Android will refuse the update if the old app was signed with a different key.
+
+IF IT STILL SAYS "APP NOT INSTALLED"
+------------------------------------
+Try these in order:
+
+1. Make sure you are installing Hishab-1.3.4.apk, not an old downloaded copy.
+   Delete the old file, then copy/download the new one again.
+2. If an older Hishab app is already installed and the update is rejected,
+   uninstall it: Settings -> Apps -> Hishab -> Uninstall.
+   WARNING: uninstalling removes that app's local data. Download a backup
+   from the old app first if you need it.
+3. Allow installs for the app you are installing from. On Android 8+ this is
+   usually Settings -> Apps -> Special app access -> Install unknown apps ->
+   Files / Chrome / Telegram -> Allow.
+4. Some phones block APKs from messaging apps. Copy the APK to the Download
+   folder with a file manager and tap it there.
+5. Check free storage. The app needs about 15 MB free for installation.
+6. Restart the phone, then try again.
+
+HOW TO USE THE ASSISTANT
+------------------------
+1. Open Hishab and tap the chat icon in the top-right corner.
+   You can also open More -> Ask Hishab.
+2. Type a question, or tap one of the example questions.
+3. Read the answer. Matching transactions show the date, category, account,
+   member and amount. Tap a transaction to open it.
+4. Open "Help & examples" for the short guide at any time.
+5. To ask by a person's name, scroll to "Saved contacts", enter a name and
+   phone number, then tap "Save contact".
+   Example: save "Jemmy bhai" with 918272727, then ask
+   "How much did I give Jemmy bhai?"
+6. To rename a contact, save the same phone number with the new name.
+7. To remove a contact, tap the bin icon next to it. Transactions are not
+   changed.
+
+Useful assistant questions
+--------------------------
+- How much did I spend on shopping last month?
+- How much at Rizq restaurant?
+- How much did I spend this month?
+- Show my Rizq restaurant expenses
+- List POS transactions
+- Show bill payments this year
+- Show my last 10 transactions
+- What is my bank balance?
+- How much did I receive this month?
+- How much did I give 918272727?
+
+The assistant searches all members by default. If you mention a member name,
+it narrows the search to that member. Date words such as "last month",
+"this year", "January" and "last 30 days" are understood.
+
+BACKUP AND MOVE TO A NEW PHONE
+------------------------------
+- In Hishab open More -> Download backup. Keep the JSON file safe.
+- On the new phone, install Hishab, open More -> Restore backup, and choose
+  the file.
+- Backups include transactions, members, settings, opening balances and saved
+  contacts.
+- The assistant works on the restored data immediately.
+
+PRIVACY
+-------
+- No account, no cloud sync, no tracking and no analytics.
+- Statements, transactions and contacts stay in the app's local storage.
+- The assistant reads only the data saved in this app on this phone.
+- The INTERNET permission is used by the app's internal loopback server.
+  Hishab does not need a remote website to work.
+
+IF SOMETHING LOOKS WRONG
+------------------------
+- If the assistant says "No matching transactions", try a shorter note or
+  merchant name, remove the date filter, or ask for "all time".
+- If the app does not update, close it from recent apps and open it again.
+- If an import looks wrong, check the preview before saving. The preview shows
+  whether a cash-out row goes to Cash.
+- For an installation problem, confirm the file size and SHA-256 checksum from
+  SHA256.txt. A truncated download will not install.
+
+BANGLA - সংক্ষিপ্ত নির্দেশনা
+----------------------------
+১. Hishab-1.3.4.apk ফোনে কপি করুন। ফাইলটি খুলে Install চাপুন।
+২. অনুমতি চাইলে Settings -> Allow from this source চালু করুন।
+৩. পুরোনো Hishab থাকলে আগে আনইনস্টল করবেন না; নতুনটি তার উপরেই ইনস্টল করুন।
+   তাহলে আপনার আগের লেনদেন থাকবে।
+৪. অ্যাপ খুলে উপরের ডান দিকের চ্যাট আইকনে চাপুন, অথবা More -> Ask Hishab
+   খুলুন। নিজের ভাষায় প্রশ্ন লিখুন বা উদাহরণে চাপ দিন।
+৫. নাম দিয়ে খুঁজতে নিচের "Saved contacts"-এ নাম ও ফোন নম্বর সেভ করুন।
+   যেমন "Jemmy bhai" এবং 918272727 সেভ করে জিজ্ঞেস করুন:
+   "How much did I give Jemmy bhai?"
+৬. সব হিসাব ফোনেই থাকে। কোনো ইন্টারনেট সার্ভার বা অ্যাকাউন্ট লাগে না।
+৭. ব্যাকআপ নিতে More -> Download backup ব্যবহার করুন।
+
+Checksum
+--------
+See SHA256.txt in the release folder. Compare it with the file you downloaded.

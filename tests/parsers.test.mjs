@@ -5,6 +5,7 @@ import {
   classifyHeader, detectSource, parseStatement,
 } from '../assets/js/parsers.js';
 import { parseNumber } from '../assets/js/utils.js';
+import { isCashOutDescription, suggestedTransferTarget } from '../assets/js/categories.js';
 
 let passed = 0;
 function test(name, fn) {
@@ -57,6 +58,47 @@ test('bank CSV: ATM and deposits become transfers (no double count)', () => {
   assert.equal(addMoney.toAccount, 'bkash');
 });
 
+test('bank CASH OUT / ATM goes to Cash, never bKash', () => {
+  const csv = `Date,Description,Reference,Debit,Credit,Balance
+01/10/2026,CASH OUT,TRX-1,2000.00,,8000.00
+02/10/2026,ATM WITHDRAWAL,TRX-2,1500.00,,6500.00
+03/10/2026,CASH WDL,TRX-3,500.00,,6000.00
+04/10/2026,CASH OUT CHARGE,TRX-4,20.00,,5980.00
+`;
+  const { rows } = parseStatement(csv, { sourceHint: 'bank' });
+  const cashOut = rows.find((row) => row.ref === 'TRX-1');
+  const atm = rows.find((row) => row.ref === 'TRX-2');
+  const wdl = rows.find((row) => row.ref === 'TRX-3');
+  const fee = rows.find((row) => row.ref === 'TRX-4');
+  for (const row of [cashOut, atm, wdl]) {
+    assert.equal(row.type, 'transfer');
+    assert.equal(row.account, 'bank');
+    assert.equal(row.toAccount, 'cash');
+  }
+  assert.equal(fee.type, 'expense');
+  assert.equal(fee.category, 'fees');
+});
+
+test('bKash CSV: Cash Out still goes to Cash', () => {
+  const csv = `Date,Time,Trx ID,Description,Amount,Balance
+01/10/2026,10:00,TRX-1,Cash Out,-2000.00,8000.00
+`;
+  const { rows } = parseStatement(csv, { sourceHint: 'bkash' });
+  assert.equal(rows[0].type, 'transfer');
+  assert.equal(rows[0].account, 'bkash');
+  assert.equal(rows[0].toAccount, 'cash');
+});
+
+test('ATM deposit goes from Cash into Bank, not the other way', () => {
+  const csv = `Date,Description,Reference,Debit,Credit,Balance
+05/10/2026,ATM DEPOSIT,TRX-5,,1000.00,6980.00
+`;
+  const { rows } = parseStatement(csv, { sourceHint: 'bank' });
+  assert.equal(rows[0].type, 'transfer');
+  assert.equal(rows[0].account, 'cash');
+  assert.equal(rows[0].toAccount, 'bank');
+});
+
 test('bKash CSV: source detection and refs', () => {
   const result = parseStatement(SAMPLE_BKASH_CSV);
   assert.equal(result.ok, true);
@@ -91,6 +133,17 @@ test('empty or unrecognised input is reported, not thrown', () => {
 test('source hints are respected', () => {
   assert.equal(detectSource('random', 'bkash'), 'bkash');
   assert.equal(detectSource('bKash Statement\nTrx ID, Cash Out'), 'bkash');
+});
+
+test('cash-out descriptions are routed to Cash, fees are not', () => {
+  assert.equal(isCashOutDescription('ATM withdrawal'), true);
+  assert.equal(isCashOutDescription('Cash Out'), true);
+  assert.equal(isCashOutDescription('CASH WDL'), true);
+  assert.equal(isCashOutDescription('Cash Out charge'), false);
+  assert.equal(isCashOutDescription('ATM deposit'), false);
+  assert.equal(suggestedTransferTarget('bank', 'ATM withdrawal'), 'cash');
+  assert.equal(suggestedTransferTarget('bkash', 'Cash Out'), 'cash');
+  assert.equal(suggestedTransferTarget('cash', ''), 'bank');
 });
 
 test('header classifier understands Dr/Cr and Bengali', () => {

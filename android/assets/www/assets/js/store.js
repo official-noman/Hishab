@@ -6,13 +6,13 @@ import {
   ACCOUNT_IDS, MEMBER_COLORS, MEMBER_EMOJIS, matchCategory,
 } from './categories.js';
 import {
-  addDaysISO, isoOf, normDesc, parseDateAny, parseISO, parseNumber, todayISO, uid,
+  addDaysISO, bnToEn, isoOf, normDesc, parseDateAny, parseISO, parseNumber, todayISO, uid,
 } from './utils.js';
 
 export const STORAGE_KEY = 'hishab.state.v1';
 export const UI_KEY = 'hishab.ui.v1';
 export const UNDO_KEY = 'hishab.undo.v1';
-export const APP_VERSION = '1.3.1';
+export const APP_VERSION = '1.3.4';
 
 export function defaultState() {
   return {
@@ -24,6 +24,7 @@ export function defaultState() {
     ],
     activeMember: 'all',
     txns: [],
+    contacts: [],
     accounts: {
       bank: { opening: 0 },
       bkash: { opening: 0 },
@@ -38,6 +39,11 @@ export function defaultState() {
   };
 }
 
+/** Keep phone numbers searchable while accepting +880, spaces and dashes. */
+export function normalizePhone(value) {
+  return bnToEn(String(value ?? '')).replace(/\D/g, '').slice(0, 20);
+}
+
 export function normalizeState(raw) {
   const base = defaultState();
   if (!raw || typeof raw !== 'object') return base;
@@ -47,6 +53,7 @@ export function normalizeState(raw) {
     members: [],
     activeMember: 'all',
     txns: [],
+    contacts: [],
     accounts: {
       bank: { opening: 0 },
       bkash: { opening: 0 },
@@ -83,6 +90,25 @@ export function normalizeState(raw) {
   state.settings.theme = s.theme === 'light' ? 'light' : 'dark';
   state.settings.budget = Math.max(0, parseNumber(s.budget));
   state.settings.onboarded = Boolean(s.onboarded);
+
+  const seenContactIds = new Set();
+  const seenPhones = new Set();
+  for (const item of Array.isArray(raw.contacts) ? raw.contacts : []) {
+    if (!item || typeof item !== 'object') continue;
+    const name = String(item.name || '').trim().slice(0, 60);
+    const phone = normalizePhone(item.phone || item.number);
+    if (!name || phone.length < 6 || seenPhones.has(phone)) continue;
+    let id = String(item.id || '');
+    if (!id || seenContactIds.has(id)) id = uid('c');
+    seenContactIds.add(id);
+    seenPhones.add(phone);
+    state.contacts.push({
+      id,
+      name,
+      phone,
+      createdAt: item.createdAt || new Date().toISOString(),
+    });
+  }
 
   const seenIds = new Set();
   const txns = Array.isArray(raw.txns) ? raw.txns : [];
@@ -345,6 +371,64 @@ export function memberById(state, id) {
   return state.members.find((m) => m.id === id) || state.members[0];
 }
 
+/* ------------------------------ saved contacts ------------------------------ */
+function ensureContacts(state) {
+  if (!Array.isArray(state.contacts)) state.contacts = [];
+  return state.contacts;
+}
+
+export function contactByPhone(state, phone) {
+  const clean = normalizePhone(phone);
+  if (!clean) return null;
+  return ensureContacts(state).find((contact) => contact.phone === clean) || null;
+}
+
+/** Add a name/number pair. Reusing the same number updates the saved name. */
+export function addContact(state, data = {}) {
+  const contacts = ensureContacts(state);
+  const name = String(data.name || '').trim().slice(0, 60);
+  const phone = normalizePhone(data.phone);
+  if (!name) return { ok: false, code: 'name' };
+  if (phone.length < 6) return { ok: false, code: 'phone' };
+
+  const existing = contacts.find((contact) => contact.phone === phone);
+  if (existing) {
+    existing.name = name;
+    return { ok: true, contact: existing, updated: true };
+  }
+
+  if (contacts.length >= 200) return { ok: false, code: 'limit' };
+  const contact = {
+    id: uid('c'),
+    name,
+    phone,
+    createdAt: new Date().toISOString(),
+  };
+  contacts.push(contact);
+  return { ok: true, contact, updated: false };
+}
+
+export function updateContact(state, id, data = {}) {
+  const contact = ensureContacts(state).find((item) => item.id === id);
+  if (!contact) return { ok: false, code: 'missing' };
+  const name = data.name == null ? contact.name : String(data.name).trim().slice(0, 60);
+  const phone = data.phone == null ? contact.phone : normalizePhone(data.phone);
+  if (!name) return { ok: false, code: 'name' };
+  if (phone.length < 6) return { ok: false, code: 'phone' };
+  const duplicate = state.contacts.find((item) => item.id !== id && item.phone === phone);
+  if (duplicate) return { ok: false, code: 'duplicate' };
+  contact.name = name;
+  contact.phone = phone;
+  return { ok: true, contact };
+}
+
+export function deleteContact(state, id) {
+  const contacts = ensureContacts(state);
+  const contact = contacts.find((item) => item.id === id) || null;
+  state.contacts = contacts.filter((item) => item.id !== id);
+  return contact;
+}
+
 /* ------------------------------ dedupe / backup ------------------------------ */
 export function fingerprint(tx) {
   return [
@@ -479,7 +563,16 @@ export function mergeStates(current, incoming) {
     added += 1;
   }
 
-  return { state, added, membersAdded };
+  const existingPhones = new Set(state.contacts.map((contact) => contact.phone));
+  let contactsAdded = 0;
+  for (const contact of incoming.contacts || []) {
+    if (!contact.phone || existingPhones.has(contact.phone)) continue;
+    state.contacts.push({ ...contact, id: uid('c') });
+    existingPhones.add(contact.phone);
+    contactsAdded += 1;
+  }
+
+  return { state, added, membersAdded, contactsAdded };
 }
 
 /* ------------------------------ demo data ------------------------------ */

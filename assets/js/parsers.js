@@ -8,7 +8,9 @@
    • transfer detection (ATM, cash out/in, add money, cash deposit)
    ========================================================= */
 
-import { guessType, isTransferDescription, matchCategory } from './categories.js';
+import {
+  guessType, isCashOutDescription, isTransferDescription, matchCategory,
+} from './categories.js';
 import { parseDateAny, parseNumber } from './utils.js';
 
 const MAX_ROWS = 5000;
@@ -264,19 +266,32 @@ function cleanDescription(value) {
 
 function routeTransfer(desc, source) {
   const low = String(desc || '').toLowerCase();
-  if (source === 'bkash' || /\bbkash\b|\bbikash\b|বিকাশ/.test(low)) {
-    if (/\bcash\s*o(?:ut|st|w|wt)\b/.test(low)) return { account: 'bkash', toAccount: 'cash' };
-    if (/\bcash\s*in\b/.test(low)) return { account: 'cash', toAccount: 'bkash' };
-    if (/\badd\s*money\b/.test(low)) return { account: 'bank', toAccount: 'bkash' };
+  const account = source === 'bkash' ? 'bkash' : 'bank';
+
+  // Bank charges and bKash fees are real expenses, even when the description
+  // contains "ATM" or "Cash Out". Do not turn them into transfers.
+  if (/\b(?:fee|fees|charge|charges|commission)\b/i.test(low)) return null;
+
+  // ATM / cash withdrawal / bKash Cash Out: money leaves Bank or bKash and
+  // the same amount enters Cash. Net balance stays unchanged.
+  if (isCashOutDescription(low)) {
+    return { account, toAccount: 'cash' };
   }
-  if (/\batm\b/.test(low) || /cash\s*(withdraw|withdrawal|withdrawn|wd)\b/.test(low)) {
-    return { account: 'bank', toAccount: 'cash' };
+
+  // Cash in / deposit: physical cash enters the bank or bKash account.
+  if (/\bcash\s*in\b/.test(low) || /cash\s*deposit\b/.test(low) || /\batm\s*deposit\b/.test(low)) {
+    return source === 'bkash'
+      ? { account: 'cash', toAccount: 'bkash' }
+      : { account: 'cash', toAccount: 'bank' };
   }
-  if (/cash\s*deposit\b/.test(low)) {
-    return { account: 'cash', toAccount: 'bank' };
+
+  // Add Money from a bank account goes into bKash.
+  if (/\badd\s*money\b/.test(low)) {
+    return { account: 'bank', toAccount: 'bkash' };
   }
+
   if (isTransferDescription(low)) {
-    return { account: source === 'bkash' ? 'bkash' : 'bank', toAccount: '' };
+    return { account, toAccount: '' };
   }
   return null;
 }
