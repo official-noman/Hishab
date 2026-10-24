@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { normalizeVoiceText, parseVoiceCommand } from '../assets/js/voice.js';
+import {
+  createSpeechRecognizer, normalizeVoiceText, parseVoiceCommand, speechSupported,
+} from '../assets/js/voice.js';
 
 const members = [
   { id: 'm_me', name: 'Me' },
@@ -21,6 +23,22 @@ test('fare with a description becomes a transport expense', () => {
   assert.equal(result.note, 'Bus and rickshaw');
   assert.equal(result.account, 'cash');
   assert.equal(result.date, '2026-10-22');
+});
+
+test('quoted category amount account note sequence is parsed', () => {
+  const result = parseVoiceCommand('"transport" "50 taka" by cash for "bus fare"', {
+    members,
+    today: '2026-10-24',
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.type, 'expense');
+  assert.equal(result.category, 'transport');
+  assert.equal(result.amount, 50);
+  assert.equal(result.account, 'cash');
+  assert.equal(result.toAccount, '');
+  assert.equal(result.note, 'Bus fare');
+  assert.equal(result.date, '2026-10-24');
+  assert.deepEqual(result.warnings, []);
 });
 
 test('bus fare in words is parsed', () => {
@@ -168,4 +186,79 @@ test('missing amount is reported without throwing', () => {
 
 test('normalization converts Bengali digits and keeps money separators', () => {
   assert.equal(normalizeVoiceText(' ৳১,২৫০.৫০ '), '1,250.50');
+});
+
+test('Android bridge is preferred and delivers native speech results', () => {
+  const previousWindow = globalThis.window;
+  let startedLang = '';
+  let stopped = false;
+  let aborted = false;
+
+  globalThis.window = {
+    HishabAndroid: {
+      startVoice(lang) {
+        startedLang = lang;
+      },
+      stopVoice() {
+        stopped = true;
+      },
+      abortVoice() {
+        aborted = true;
+      },
+    },
+  };
+
+  try {
+    assert.equal(speechSupported(), true);
+    const recognizer = createSpeechRecognizer('bn-BD');
+    assert.ok(recognizer);
+
+    let started = false;
+    let finalText = '';
+    let interimText = '';
+    let ended = false;
+    recognizer.onstart = () => {
+      started = true;
+    };
+    recognizer.onresult = (event) => {
+      const text = event.results[0][0].transcript;
+      if (event.results[0].isFinal) finalText = text;
+      else interimText = text;
+    };
+    recognizer.onend = () => {
+      ended = true;
+    };
+
+    recognizer.start();
+    assert.equal(startedLang, 'bn-BD');
+
+    globalThis.window.HishabVoiceEvent('start', '', '');
+    globalThis.window.HishabVoiceEvent('partial', 'transport 50', '');
+    globalThis.window.HishabVoiceEvent(
+      'result',
+      'transport 50 taka by cash for bus fare',
+      '',
+    );
+
+    assert.equal(started, true);
+    assert.equal(interimText, 'transport 50');
+    assert.equal(finalText, 'transport 50 taka by cash for bus fare');
+    assert.equal(ended, true);
+
+    const parsed = parseVoiceCommand(finalText, { today: '2026-10-24' });
+    assert.equal(parsed.category, 'transport');
+    assert.equal(parsed.amount, 50);
+    assert.equal(parsed.account, 'cash');
+    assert.equal(parsed.note, 'Bus fare');
+
+    const second = createSpeechRecognizer('en-US');
+    second.start();
+    second.stop();
+    second.abort();
+    assert.equal(stopped, true);
+    assert.equal(aborted, true);
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+  }
 });

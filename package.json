@@ -1,6 +1,6 @@
 {
   "name": "hishab",
-  "version": "1.3.4",
+  "version": "1.3.5",
   "private": true,
   "type": "module",
   "description": "Hishab — a private, offline expense tracker for bank, bKash and cash statements (PDF, photos, CSV, voice).",

@@ -463,13 +463,123 @@ export function parseVoiceCommand(value, options = {}) {
   };
 }
 
-/* ------------------------------ browser speech ------------------------------ */
-export function speechSupported() {
+/* ------------------------------ browser / Android speech ------------------------------ */
+let nativeSpeechHandler = null;
+
+function hasNativeSpeech() {
   return typeof window !== 'undefined'
-    && Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
+    && window.HishabAndroid
+    && typeof window.HishabAndroid.startVoice === 'function';
+}
+
+function installNativeSpeechHook() {
+  if (typeof window === 'undefined' || typeof window.HishabVoiceEvent === 'function') return;
+  window.HishabVoiceEvent = (type, text, code) => {
+    if (typeof nativeSpeechHandler === 'function') {
+      nativeSpeechHandler(type, text || '', code || '');
+    }
+  };
+}
+
+function nativeSpeechResult(text, final) {
+  const alternative = { transcript: text || '', confidence: 1 };
+  const result = [alternative];
+  result.isFinal = Boolean(final);
+  return { resultIndex: 0, results: [result] };
+}
+
+function createNativeSpeechRecognizer(lang) {
+  installNativeSpeechHook();
+
+  let active = false;
+  let handler = null;
+
+  const release = () => {
+    active = false;
+    if (nativeSpeechHandler === handler) nativeSpeechHandler = null;
+    handler = null;
+  };
+
+  const recognizer = {
+    lang,
+    continuous: false,
+    interimResults: true,
+    maxAlternatives: 1,
+    onstart: null,
+    onresult: null,
+    onerror: null,
+    onend: null,
+
+    start() {
+      release();
+      active = true;
+      handler = (type, text, code) => {
+        if (!active) return;
+        if (type === 'start') {
+          recognizer.onstart?.();
+          return;
+        }
+        if (type === 'partial') {
+          recognizer.onresult?.(nativeSpeechResult(text, false));
+          return;
+        }
+        if (type === 'result') {
+          release();
+          recognizer.onresult?.(nativeSpeechResult(text, true));
+          recognizer.onend?.();
+          return;
+        }
+        if (type === 'error') {
+          release();
+          recognizer.onerror?.({ error: code || 'unknown', message: text || '' });
+          recognizer.onend?.();
+          return;
+        }
+        if (type === 'end') {
+          release();
+          recognizer.onend?.();
+        }
+      };
+      nativeSpeechHandler = handler;
+
+      try {
+        window.HishabAndroid.startVoice(lang);
+      } catch (error) {
+        release();
+        throw error;
+      }
+    },
+
+    stop() {
+      if (!active) return;
+      try {
+        window.HishabAndroid.stopVoice?.();
+      } catch {
+        /* the native service may already be gone */
+      }
+    },
+
+    abort() {
+      release();
+      try {
+        window.HishabAndroid.abortVoice?.();
+      } catch {
+        /* the native service may already be gone */
+      }
+    },
+  };
+
+  return recognizer;
+}
+
+export function speechSupported() {
+  return hasNativeSpeech()
+    || (typeof window !== 'undefined'
+      && Boolean(window.SpeechRecognition || window.webkitSpeechRecognition));
 }
 
 export function createSpeechRecognizer(lang = 'en-US') {
+  if (hasNativeSpeech()) return createNativeSpeechRecognizer(lang);
   if (!speechSupported()) return null;
   const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
   const recognizer = new Ctor();

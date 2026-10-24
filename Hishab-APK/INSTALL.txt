@@ -1,15 +1,23 @@
 HISHAB - ANDROID APK INSTALL GUIDE
 ==================================
 
-File: Hishab-1.3.4.apk
+File: Hishab-1.3.5.apk
 Package: com.hishab.app
-Version: 1.3.4 (version code 4)
+Version: 1.3.5 (version code 5)
 Minimum Android: 5.0 (Android Lollipop)
 Works offline: Yes. The whole app is bundled inside the APK.
 Internet needed: No, after installation.
 
-What is new in 1.3.4
+What is new in 1.3.5
 --------------------
+- FIXED: voice entry in the standalone Android app. The app now uses Android's
+  own speech recognizer and asks for the microphone permission itself.
+- Voice sequence: "transport 50 taka by cash for bus fare" becomes Expense,
+  category Transport, amount 50, account Cash, note "Bus fare". The preview is
+  filled automatically; tap Save transaction to add it.
+- If microphone permission was permanently denied, the voice screen shows an
+  "Open app settings" button. Tap it, open Permissions -> Microphone -> Allow,
+  then return to Hishab and tap the microphone again.
 - NEW: Ask Hishab, an on-device assistant. Open it from the chat icon in the
   top bar or from More -> Ask Hishab.
 - Ask about spending, income, transfers, balances, merchants, notes, categories,
@@ -34,16 +42,16 @@ What is new in 1.3.4
 
 HOW TO INSTALL ON A PHONE
 -------------------------
-1. Copy Hishab-1.3.4.apk to the phone (USB, Google Drive, Telegram, etc.).
+1. Copy Hishab-1.3.5.apk to the phone (USB, Google Drive, Telegram, etc.).
    If an app blocks .apk files, send Hishab-Share.zip and unzip it first.
-2. Open the phone's Files app and tap Hishab-1.3.4.apk.
+2. Open the phone's Files app and tap Hishab-1.3.5.apk.
 3. Android may say: "For your security, your phone is not allowed to install
    unknown apps from this source."
    Tap Settings -> Allow from this source -> go back.
 4. Tap Install.
 5. Tap Open. The Hishab icon is now in the app list.
 
-If Hishab 1.3.3 or another older Hishab is already installed, install 1.3.4
+If Hishab 1.3.4 or another older Hishab is already installed, install 1.3.5
 over it. Do not uninstall the old app first: an update keeps your saved data.
 Android will refuse the update if the old app was signed with a different key.
 
@@ -51,7 +59,7 @@ IF IT STILL SAYS "APP NOT INSTALLED"
 ------------------------------------
 Try these in order:
 
-1. Make sure you are installing Hishab-1.3.4.apk, not an old downloaded copy.
+1. Make sure you are installing Hishab-1.3.5.apk, not an old downloaded copy.
    Delete the old file, then copy/download the new one again.
 2. If an older Hishab app is already installed and the update is rejected,
    uninstall it: Settings -> Apps -> Hishab -> Uninstall.
@@ -64,6 +72,22 @@ Try these in order:
    folder with a file manager and tap it there.
 5. Check free storage. The app needs about 15 MB free for installation.
 6. Restart the phone, then try again.
+
+VOICE ENTRY
+-----------
+1. Tap the microphone button in Hishab. The first time, Android asks for
+   microphone permission. Tap Allow.
+2. Say the category, amount, account and note in that order. For example:
+     "transport 50 taka by cash for bus fare"
+     "transport" "50 taka" by cash for "bus fare"
+   Hishab fills the preview as: Expense, Transport, 50, Cash, Bus fare.
+3. Check the preview. Tap "Save transaction" to add it.
+4. If the status says microphone access is blocked, tap "Open app settings",
+   then choose Permissions -> Microphone -> Allow. Return to Hishab and tap the
+   microphone again.
+5. Voice needs the phone's speech service. Some phones need an internet
+   connection for recognition. Hishab never stores the audio.
+6. The preview can be edited with "Edit details" before saving.
 
 HOW TO USE THE ASSISTANT
 ------------------------
@@ -114,6 +138,8 @@ PRIVACY
 - The assistant reads only the data saved in this app on this phone.
 - The INTERNET permission is used by the app's internal loopback server.
   Hishab does not need a remote website to work.
+- The RECORD_AUDIO permission is used only while voice entry is listening.
+  Hishab does not store audio; the phone's speech service returns text.
 
 IF SOMETHING LOOKS WRONG
 ------------------------
@@ -127,17 +153,22 @@ IF SOMETHING LOOKS WRONG
 
 BANGLA - সংক্ষিপ্ত নির্দেশনা
 ----------------------------
-১. Hishab-1.3.4.apk ফোনে কপি করুন। ফাইলটি খুলে Install চাপুন।
+১. Hishab-1.3.5.apk ফোনে কপি করুন। ফাইলটি খুলে Install চাপুন।
 ২. অনুমতি চাইলে Settings -> Allow from this source চালু করুন।
 ৩. পুরোনো Hishab থাকলে আগে আনইনস্টল করবেন না; নতুনটি তার উপরেই ইনস্টল করুন।
    তাহলে আপনার আগের লেনদেন থাকবে।
-৪. অ্যাপ খুলে উপরের ডান দিকের চ্যাট আইকনে চাপুন, অথবা More -> Ask Hishab
+৪. ভয়েসে লেনদেন যোগ করতে মাইক আইকনে চাপুন। প্রথমবার Microphone অনুমতি
+   চাইলে Allow দিন। বলুন: "transport 50 taka by cash for bus fare"।
+   প্রিভিউতে Transport, 50, Cash, Bus fare দেখালে Save transaction চাপুন।
+   মাইক ব্লক থাকলে "Open app settings" -> Permissions -> Microphone -> Allow
+   করুন, তারপর Hishab-এ ফিরে আবার মাইক চাপুন।
+৫. অ্যাপ খুলে উপরের ডান দিকের চ্যাট আইকনে চাপুন, অথবা More -> Ask Hishab
    খুলুন। নিজের ভাষায় প্রশ্ন লিখুন বা উদাহরণে চাপ দিন।
-৫. নাম দিয়ে খুঁজতে নিচের "Saved contacts"-এ নাম ও ফোন নম্বর সেভ করুন।
+৬. নাম দিয়ে খুঁজতে নিচের "Saved contacts"-এ নাম ও ফোন নম্বর সেভ করুন।
    যেমন "Jemmy bhai" এবং 918272727 সেভ করে জিজ্ঞেস করুন:
    "How much did I give Jemmy bhai?"
-৬. সব হিসাব ফোনেই থাকে। কোনো ইন্টারনেট সার্ভার বা অ্যাকাউন্ট লাগে না।
-৭. ব্যাকআপ নিতে More -> Download backup ব্যবহার করুন।
+৭. সব হিসাব ফোনেই থাকে। কোনো ইন্টারনেট সার্ভার বা অ্যাকাউন্ট লাগে না।
+৮. ব্যাকআপ নিতে More -> Download backup ব্যবহার করুন।
 
 Checksum
 --------

@@ -11,8 +11,18 @@ A private expense tracker for you and your family. It reads **bank and bKash sta
 - **Ask Hishab** — an on-device assistant for spending, merchants, dates, bills, POS and saved contacts.
 - ATM and bKash **Cash Out** move money to Cash instead of counting as an expense.
 
-### What's new in 1.3.4
+### What's new in 1.3.5
 
+- **Voice entry fixed in the Android APK.** The app now uses Android's own speech
+  recognizer and requests the microphone permission properly instead of relying on
+  the WebView's blocked speech permission. If the phone has permanently denied the
+  microphone, the voice sheet shows an **Open app settings** button.
+- Voice understands the category → amount → account → note sequence, for example
+  **“transport 50 taka by cash for bus fare”** or
+  **“"transport" "50 taka" by cash for "bus fare"”**. It creates an Expense,
+  Transport, ৳50, Cash, note “Bus fare”. The parsed transaction is shown in the
+  voice preview; tap **Save transaction** to add it.
+- The assistant and contacts from 1.3.4 are included.
 - **Ask Hishab assistant** (top-right chat icon or More → Ask Hishab). Ask questions such as
   “How much did I spend on shopping last month?”, “How much at Rizq restaurant?”,
   “List POS transactions”, “Show bill payments this year” or “Show my last 10 transactions”.
@@ -98,7 +108,7 @@ This is only for testing. Chrome will not offer "Install" on a plain `http://` a
 ## 2. How to get an APK file
 
 > **Prebuilt APK:** the release folder already contains
-> **`Hishab-APK/Hishab-1.3.4.apk`**. It is a standalone, signed Android 5.0+
+> **`Hishab-APK/Hishab-1.3.5.apk`**. It is a standalone, signed Android 5.0+
 > app that bundles the whole website inside the APK, works fully offline and
 > needs no hosting. The assistant, contacts and cash-out handling are included.
 > `Hishab-APK/Hishab-Share.zip` is the same APK in a ZIP for sharing.
@@ -162,7 +172,7 @@ On Netlify Drop, create the folder on your computer, put the file inside, and dr
 - After the first load, it works offline because the app is cached.
 - When you update the website, the APK gets the new version automatically.
 - A PWABuilder APK is for Android. iPhone users should use **Add to Home Screen** in Safari.
-- A **fully standalone APK with no hosting at all** is already available at `Hishab-APK/Hishab-1.3.4.apk`. It uses the custom WebView wrapper in `android/`, bundles the whole app, and does not need Capacitor or Android Studio.
+- A **fully standalone APK with no hosting at all** is already available at `Hishab-APK/Hishab-1.3.5.apk`. It uses the custom WebView wrapper in `android/`, bundles the whole app, and does not need Capacitor or Android Studio.
 
 ### Alternative: Bubblewrap (command line)
 
@@ -203,7 +213,7 @@ Run the tests:
 npm test
 ```
 
-Expected: 10 parser tests, 13 analytics tests, 6 extraction tests and 12 voice tests.
+Expected: 14 parser, 5 layout, 14 analytics, 6 extraction, 14 voice, 7 undo and 11 assistant tests — 71 tests in total.
 
 ---
 
@@ -350,9 +360,13 @@ You can also edit or delete any transaction from **Activity**.
 
 You can add a transaction by speaking. Hishab fills the amount, category, account, date, member and note, then shows a preview before saving.
 
+In the **Android APK 1.3.5+**, voice uses Android's own speech recognizer. The first time, Android asks for microphone permission — tap **Allow**. If it was blocked before, the voice screen shows **Open app settings**; open it and allow **Permissions → Microphone**, then tap the mic again.
+
 1. Tap the **microphone** button above the **+** button on Home or Activity, or tap **Speak a transaction** inside the add form.
 2. Choose **English** or **Bangla**.
-3. Say the amount and what it was for. Examples:
+3. Say the category, amount, account and note. Examples:
+   - **“transport 50 taka by cash for bus fare”**
+   - **“"transport" "50 taka" by cash for "bus fare"”**
    - “Fare 50 taka for bus and rickshaw”
    - “Lunch 200 taka”
    - “Received 5,000 taka salary”
@@ -361,6 +375,14 @@ You can add a transaction by speaking. Hishab fills the amount, category, accoun
    - “বাস ভাড়া ৫০ টাকা” (Bangla)
 4. Check the amount, category, account, date and note in the preview.
 5. Tap **Save transaction**. To change something first, tap **Edit details**.
+
+The first sequence becomes:
+
+- Category: **Transport**
+- Amount: **৳50**
+- Account: **Cash**
+- Note: **Bus fare**
+- Type: **Expense**
 
 Hishab understands:
 
@@ -500,7 +522,7 @@ If you host on Netlify/GitHub/Cloudflare, the host can see normal web-server log
 | OCR finds nothing | Use a clearer, straight screenshot. Crop to the statement. Try a PDF or CSV instead. |
 | OCR mixes up numbers | Correct the row in the preview before adding. |
 | Photo will not open | HEIC/HEIF from iPhone is not supported by most browsers. Convert to JPG or take a screenshot. |
-| Microphone is blocked | Allow microphone permission for the site in your browser settings, then reopen the voice sheet. Browsers also block microphones on `file://` pages, so use HTTPS or `http://localhost:5173`. |
+| Microphone is blocked | In the APK, tap **Open app settings → Permissions → Microphone → Allow**, then tap the mic again. In a browser, allow the microphone for the site and reload; browsers block microphones on `file://` pages, so use HTTPS or `http://localhost:5173`. |
 | Voice says it is not available | Your browser does not support the Web Speech API. Use **Edit details** or the normal form. |
 | Voice needs internet | Some phone speech services are online-only. Connect once, or type the entry instead. |
 | Voice heard the wrong amount or note | Tap **Edit details**, correct the fields and save. You can also tap the mic and say it again. |
@@ -534,7 +556,7 @@ If you host on Netlify/GitHub/Cloudflare, the host can see normal web-server log
 │   │   ├── charts.js          Hand-made SVG charts
 │   │   ├── components.js      Shared UI pieces
 │   │   ├── i18n.js            UI strings
-│   │   ├── voice.js           Voice parser + browser speech wrapper
+│   │   ├── voice.js           Voice parser + native/browser speech wrapper
 │   │   ├── utils.js           Dates, money, formatting
 │   │   └── views/             Home, Activity, Import, Report, More
 │   └── vendor

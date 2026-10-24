@@ -541,6 +541,7 @@ function openVoiceSheet() {
     interim: '',
     parsed: null,
     error: '',
+    errorCode: '',
     status: t('voice.tap'),
     lang: voiceLang,
   };
@@ -572,7 +573,7 @@ function voiceSheet() {
     </div>
 
     <div id="voice-result">${voiceResultHtml(v.parsed)}</div>
-    <div id="voice-error">${v.error ? `<div class="form-error show">${esc(v.error)}</div>` : ''}</div>
+    <div id="voice-error">${voiceErrorHtml(v)}</div>
 
     <div class="alert info">${icon('info', 14)}<span>${t('voice.privacy')}</span></div>
 
@@ -587,6 +588,19 @@ function voiceTranscriptHtml(v) {
     return `<span class="voice-placeholder">${esc(t('voice.example'))}</span>`;
   }
   return `${esc(v.transcript)}${v.interim ? `<span class="interim"> ${esc(v.interim)}</span>` : ''}`;
+}
+
+function voiceErrorHtml(v) {
+  if (!v.error) return '';
+  const permissionProblem = ['not-allowed', 'service-not-allowed', 'insufficient-permissions']
+    .includes(v.errorCode);
+  const canOpenSettings = typeof window !== 'undefined'
+    && window.HishabAndroid
+    && typeof window.HishabAndroid.openAppSettings === 'function';
+  const settingsButton = permissionProblem && canOpenSettings
+    ? `<button class="btn ghost block" type="button" data-action="voice-open-settings" style="margin-top:8px">${icon('settings', 15)}${esc(t('voice.openSettings'))}</button>`
+    : '';
+  return `<div class="form-error show">${esc(v.error)}</div>${settingsButton}`;
 }
 
 function voiceResultHtml(parsed) {
@@ -636,7 +650,7 @@ function updateVoiceLive() {
   if (result) result.innerHTML = voiceResultHtml(v.parsed);
 
   const error = document.getElementById('voice-error');
-  if (error) error.innerHTML = v.error ? `<div class="form-error show">${esc(v.error)}</div>` : '';
+  if (error) error.innerHTML = voiceErrorHtml(v);
 
   const save = document.getElementById('voice-save-btn');
   if (save) {
@@ -676,6 +690,7 @@ function startVoice() {
   v.interim = '';
   v.parsed = null;
   v.error = '';
+  v.errorCode = '';
   v.status = t('voice.listening');
   updateVoiceLive();
 
@@ -734,10 +749,12 @@ function startVoice() {
     voiceTimer = 0;
     v.phase = 'ready';
     if (event.error === 'no-speech') {
+      v.errorCode = '';
       v.status = t('voice.nothing');
       updateVoiceLive();
       return;
     }
+    v.errorCode = event.error || 'unknown';
     v.error = t(`voice.err.${event.error}`, {}) || t('voice.errUnknown');
     if (v.error === `voice.err.${event.error}`) v.error = t('voice.errUnknown');
     v.status = t('voice.tap');
@@ -1371,6 +1388,9 @@ function handleAction(action, el) {
       return;
     case 'voice-edit':
       editVoiceEntry();
+      return;
+    case 'voice-open-settings':
+      if (window.HishabAndroid?.openAppSettings) window.HishabAndroid.openAppSettings();
       return;
     case 'edit-txn':
       openTxnSheet(el.dataset.id);

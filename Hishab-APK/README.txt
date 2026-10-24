@@ -1,9 +1,9 @@
-HISHAB RELEASE FOLDER - VERSION 1.3.4
+HISHAB RELEASE FOLDER - VERSION 1.3.5
 =====================================
 
-Hishab-1.3.4.apk
+Hishab-1.3.5.apk
   Standalone Android app. Install this on a phone. No website or internet
-  connection is required after installation. Version 1.3.4, minimum Android
+  connection is required after installation. Version 1.3.5, minimum Android
   5.0 (API 21), target Android 14 (API 34).
 
 Hishab-Share.zip
@@ -20,9 +20,19 @@ INSTALL.txt
 SHA256.txt
   Checksums so you can confirm the files were not corrupted during transfer.
 
-What changed in 1.3.4
+What changed in 1.3.5
 ---------------------
-- NEW: Ask Hishab, an on-device assistant. Open it from the chat icon in the
+- Voice entry is fixed in the standalone APK. Hishab now uses Android's own
+  SpeechRecognizer, requests the RECORD_AUDIO runtime permission, and shows an
+  "Open app settings" button if microphone access was permanently denied.
+- Voice supports the category, amount, account and note sequence:
+    "transport 50 taka by cash for bus fare"
+    "transport" "50 taka" by cash for "bus fare"
+  This becomes: Expense, category Transport, amount 50, account Cash, note
+  "Bus fare". The preview appears immediately; tap Save transaction to add it.
+- The Android app no longer depends on the WebView speech permission, which
+  could report "permission needed" even when the phone had already granted it.
+- NEW in 1.3.4: Ask Hishab, an on-device assistant. Open it from the chat icon in the
   top bar or from More -> Ask Hishab.
 - Ask questions in your own words, for example:
     "How much did I spend on shopping last month?"
@@ -48,16 +58,18 @@ What changed in 1.3.4
 Build identity
 --------------
 Package: com.hishab.app
-Version name: 1.3.4
-Version code: 4
+Version name: 1.3.5
+Version code: 5
 Minimum Android: 5.0 (API 21)
 Target Android: 14 (API 34)
 Compile SDK: 35
 Signing certificate SHA-256:
 FF:28:F1:4E:51:17:6A:6B:CE:35:03:21:A0:58:8B:DE:B0:7E:BE:AB:78:EC:30:99:D4:6E:FD:00:8B:2C:92:6E
 
-Permissions: INTERNET only. The permission is used by the local loopback
+Permissions: INTERNET and RECORD_AUDIO. INTERNET is used by the local loopback
 server inside the app; the app does not require a remote website to work.
+RECORD_AUDIO is used only when you tap the voice button. Hishab does not record
+or store audio files; the phone's speech service returns text.
 
 Keep the signing key safe if you plan to publish updates. An Android update
 must be signed with the same key as the installed app.
@@ -69,7 +81,7 @@ as required by Android 11+. Compare the three hashes in SHA256.txt with the
 files you downloaded.
 
 Windows PowerShell:
-  Get-FileHash .\Hishab-1.3.4.apk -Algorithm SHA256
+  Get-FileHash .\Hishab-1.3.5.apk -Algorithm SHA256
 
 Linux / macOS:
   sha256sum -c SHA256.txt

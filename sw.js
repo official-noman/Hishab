@@ -2,7 +2,7 @@
    Hishab — offline service worker
    ========================================================= */
 
-const CACHE = 'hishab-v1.3.4';
+const CACHE = 'hishab-v1.3.5';
 
 const ASSETS = [
   './',

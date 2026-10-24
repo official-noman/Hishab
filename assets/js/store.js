@@ -12,7 +12,7 @@ import {
 export const STORAGE_KEY = 'hishab.state.v1';
 export const UI_KEY = 'hishab.ui.v1';
 export const UNDO_KEY = 'hishab.undo.v1';
-export const APP_VERSION = '1.3.4';
+export const APP_VERSION = '1.3.5';
 
 export function defaultState() {
   return {
