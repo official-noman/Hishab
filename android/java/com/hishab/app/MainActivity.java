@@ -423,7 +423,7 @@ public class MainActivity extends Activity {
             case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
                 return "busy";
             case SpeechRecognizer.ERROR_SERVER:
-                return "service-not-allowed";
+                return "service-not-available";
             default:
                 return "unknown";
         }
